@@ -86,10 +86,10 @@ Note: An index with index name should be present in Splunk.
 2.  Copy the .splunkrc file to the platform home directory of the user that started the Controller. In Linux, this is the environment variable $HOME location; in Windows, it is the environment variable %USERPROFILE% location.
 
 ## Installing Custom Actions:
+To create a Custom Action, first refer to the the following topics (requires login):
+* [Creating custom action](http://docs.appdynamics.com/display/PRO13S/Custom+Actions)
+* [Build an Alerting Extension](http://docs.appdynamics.com/display/PRO13S/Build+an+Alerting+Extension)
 
-      To create a Custom Action, first refer to the the following topics (requires login):
-      * [Creating custom action](http://docs.appdynamics.com/display/PRO13S/Custom+Actions)
-      * [Build an Alerting Extension](http://docs.appdynamics.com/display/PRO13S/Build+an+Alerting+Extension)
 
 Now you are ready to use this extension as a custom action. In the AppDynamics UI, go to Alert & Respond -> Actions. Click Create Action. Select Custom Action and click OK. In the drop-down menu you can find the action called 'splunk-alert'.
 
