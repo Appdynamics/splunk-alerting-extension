@@ -8,7 +8,7 @@ Splunk [www.splunk.com](http://www.splunk.com) indexes and makes searchable data
 
 ### Prerequisites
 
- 1. You need to have edit_tcp permission
+ 1. User needs to have edit_tcp permission to post events to Splunk
 
  2. Splunk sdk and logging libraries are not in maven repo. To get it using maven we have to install the library in the local maven repo. Splunk sdk 1.4.0 and Splunk logging 1.2 are checked in to the lib folder. Use the below maven commands to install the libraries to local maven repo.
 
