@@ -96,7 +96,7 @@ Now you are ready to use this extension as a custom action. In the AppDynamics U
 
 ##Contributing
 
-Find out more in the [AppSphere]() community.
+Find out more in the [AppSphere](http://www.appdynamics.com/community/exchange/extension/splunk-alerting-extension/) community.
 
 ##Support
 
