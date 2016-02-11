@@ -38,8 +38,8 @@ public class SplunkAppDynamicsEvent extends SplunkLogEvent
     public static final String APPDYNAMICS_AFFECTED_ENTITY_NAME = "ad_affected_entity_name";
     public static final String APPDYNAMICS_AFFECTED_ENTITY_ID = "ad_affected_entity_id";
     public static final String APPDYNAMICS_EVALUATION_ENTITY_TYPE = "ad_evaluation_entity_type";
-    public static final String APPDYNAMICS_EVALUATION_ENTITY_NAME = "ad_affected_entity_name";
-    public static final String APPDYNAMICS_EVALUATION_ENTITY_ID = "ad_affected_entity_id";
+    public static final String APPDYNAMICS_EVALUATION_ENTITY_NAME = "ad_evaluation_entity_name";
+    public static final String APPDYNAMICS_EVALUATION_ENTITY_ID = "ad_evaluation_entity_id";
     public static final String APPDYNAMICS_SCOPE_TYPE = "ad_scope_type";
     public static final String APPDYNAMICS_SCOPE_NAME = "ad_scope_name";
     public static final String APPDYNAMICS_SCOPE_ID = "ad_scope_id";
