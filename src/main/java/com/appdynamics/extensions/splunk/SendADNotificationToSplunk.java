@@ -23,8 +23,7 @@ package com.appdynamics.extensions.splunk;
  * @author Pranta Das
  * Created on: August 14, 2012.
  *
- * @author Satish Reddy M
- *
+ * @author Satish Muddam
  */
 
 import com.appdynamics.extensions.alerts.customevents.EvaluationEntity;
@@ -35,157 +34,22 @@ import com.appdynamics.extensions.alerts.customevents.EventType;
 import com.appdynamics.extensions.alerts.customevents.HealthRuleViolationEvent;
 import com.appdynamics.extensions.alerts.customevents.OtherEvent;
 import com.appdynamics.extensions.alerts.customevents.TriggerCondition;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.splunk.logging.RestEventData;
-import com.splunk.logging.SplunkLogEvent;
-import com.splunk.logging.SplunkRestInput;
+import com.appdynamics.extensions.yml.YmlReader;
 import org.apache.log4j.Logger;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 
-public class SendADNotificationToSplunk  {
+public class SendADNotificationToSplunk {
     private static Logger logger =
             Logger.getLogger(SendADNotificationToSplunk.class);
 
-    /**
-     * Default property values
-     */
-    private static final String DEFAULT_HOSTNAME
-            = "localhost";
-    private static final int DEFAULT_PORT = 8089;
-
-    private static final String userHome = System.getProperty("user.home"),
-            fileName = userHome + "/.splunkrc";
-    private static String userName = "admin", password = "ad@Splunk0";
     private static final String BANNER = "***************************" +
             "*****************************************************";
-    /**
-     * Connection properties
-     */
-    private static final String SPLUNK_HOST = "host";
-    private static final String SPLUNK_PORT = "port";
-    private static final String SPLUNK_USERNAME = "username";
-    private static final String SPLUNK_PASSWORD = "password";
-
-    private static final String SPLUNK_EVENT_HOST = "eventHost";
-    private static final String SPLUNK_INDEX = "index";
-    private static final String SPLUNK_SOURCETYPE = "sourceType";
 
 
-
-    static String hostname;
-    static int port;
-    static Properties theProperties;
-
-    static RestEventData restEventData = new RestEventData();
-    static SplunkRestInput splunkRestInput;
-
-    /**
-     * Set up connection to the web server using the global configuration
-     * information from the input properties file
-     *
-     * @return true if successful, false otherwise
-     */
-    private static boolean setupConnection() {
-        /**
-         * Read the Splunk client properties file for the connection properties
-         */
-        theProperties = new Properties();
-        hostname = DEFAULT_HOSTNAME;
-        port = DEFAULT_PORT;
-
-        System.getProperties();
-
-        logger.info(" Reading .splunkrc file:" +
-                fileName);
-
-        FileInputStream propFile = null;
-        try {
-            propFile = new FileInputStream(fileName);
-        } catch (FileNotFoundException e) {
-            logger.error(e);
-        }
-
-        if (propFile != null) {
-            try {
-                theProperties.load(propFile);
-            } catch (IOException e) {
-                logger.error(e);
-            }
-
-            String strVal;
-
-            if ((strVal = theProperties.getProperty(SPLUNK_HOST)) != null)
-                hostname = strVal.trim();
-
-            if ((strVal = theProperties.getProperty(SPLUNK_PORT)) != null)
-                port = Integer.parseInt(strVal.trim());
-
-            if ((strVal = theProperties.getProperty(SPLUNK_USERNAME)) != null)
-                userName = strVal.trim();
-
-            if ((strVal = theProperties.getProperty(SPLUNK_PASSWORD)) != null)
-                password = strVal.trim();
-        }
-
-        try {
-            if (splunkRestInput == null) {
-                String eventHost = theProperties.getProperty(SPLUNK_EVENT_HOST);
-
-                if(eventHost != null && eventHost.length() > 0) {
-                    restEventData.setHost(eventHost);
-                }
-
-                String indexName = theProperties.getProperty(SPLUNK_INDEX);
-                if(indexName != null && indexName.length() > 0) {
-                    restEventData.setIndex(indexName);
-                }
-
-                String sourceType = theProperties.getProperty(SPLUNK_SOURCETYPE);
-                if(sourceType != null && sourceType.length() > 0) {
-                    restEventData.setSourcetype(sourceType);
-                }
-
-                splunkRestInput = new SplunkRestInput(userName, password, hostname, port, restEventData, false);
-                splunkRestInput.setMaxQueueSize("30MB");
-                splunkRestInput.setDropEventsOnQueueFull(false);
-            }
-        } catch (Exception e) {
-            logger.error("Unable to connect to Splunk", e);
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * Tear down connection to the Splunk server
-     */
-    private static void teardownConnection() {
-        logger.info(" Calling disconnect");
-
-        if (splunkRestInput != null) {
-            splunkRestInput.closeStream();
-            splunkRestInput = null;
-        }
-
-        logger.info(" Disconnected from Splunk.");
-    }
-
-    /**
-     * Send an event to Splunk via REST
-     *
-     * @param event The event being passed to Splunk
-     */
-    private static void sendEvent(SplunkLogEvent event) {
-        // send event to the cell
-        logger.info(" Sending event to Splunk.");
-        splunkRestInput.sendEvent(event.toString());
-    }
+    private static String CONFIG_FILENAME = "." + File.separator + "conf" + File.separator + "config.yml";
 
     private static Event parseEventParams(String[] args) {
         EventBuilder eventBuilder = new EventBuilder();
@@ -199,7 +63,7 @@ public class SendADNotificationToSplunk  {
      *
      * @param args - arguments passed
      */
-    public static void main(String[] args) throws JsonProcessingException {
+    public static void main(String[] args) {
 
         logger.info(BANNER);
         String details = SendADNotificationToSplunk.class.getPackage().getImplementationTitle();
@@ -212,21 +76,15 @@ public class SendADNotificationToSplunk  {
         }
 
         try {
-            boolean connectionSetup = setupConnection();
 
-            if (!connectionSetup) {
-                logger.error("Unable to setup connection");
-                System.exit(-1);
-            }
+            Configuration config = YmlReader.readFromFile(CONFIG_FILENAME, Configuration.class);
 
             Event event = parseEventParams(args);
-            List<SplunkLogEvent> splunkLogEvents = convertToSplunkEvent(event);
+            List<LogMessage> logMessages = convertToSplunkEvent(event);
 
-            for(SplunkLogEvent splunkLogEvent : splunkLogEvents) {
-                sendEvent(splunkLogEvent);
-            }
+            HttpHandler httpHandler = new HttpHandler(config);
 
-            teardownConnection();
+            httpHandler.sendEventsToSplunk(logMessages);
 
             logger.info(BANNER);
         } catch (Throwable e) {
@@ -234,117 +92,121 @@ public class SendADNotificationToSplunk  {
         }
     }
 
-    private static List<SplunkLogEvent> convertToSplunkEvent(Event event) {
-        List<SplunkLogEvent> splunkLogEvents = new ArrayList<SplunkLogEvent>();
+    private static List<LogMessage> convertToSplunkEvent(Event event) {
+        List<LogMessage> logMessages = new ArrayList<LogMessage>();
+
         if (event instanceof HealthRuleViolationEvent) {
+            LogMessage logMessage = new LogMessage();
             HealthRuleViolationEvent hrve = (HealthRuleViolationEvent) event;
-            SplunkLogEvent splunkLogEvent = new SplunkLogEvent(hrve.getHealthRuleName(), hrve.getIncidentID());
 
-            splunkLogEvents.add(splunkLogEvent);
+            logMessage.addPair("name", hrve.getHealthRuleName()).addPair("event_id", hrve.getIncidentID());
+            logMessages.add(logMessage);
 
-            addPair(splunkLogEvent, SplunkAppDynamicsEvent.APPDYNAMICS_APPLICATION_NAME, hrve.getAppName());
-            addPair(splunkLogEvent, SplunkAppDynamicsEvent.APPDYNAMICS_APPLICATION_ID, hrve.getAppID());
-            addPair(splunkLogEvent, SplunkAppDynamicsEvent.COMMON_DVC_TIME, hrve.getPvnAlertTime());
-            addPair(splunkLogEvent, SplunkAppDynamicsEvent.COMMON_PRIORITY, hrve.getPriority());
-            addPair(splunkLogEvent, SplunkAppDynamicsEvent.COMMON_SEVERITY, hrve.getSeverity());
-            addPair(splunkLogEvent, SplunkAppDynamicsEvent.APPDYNAMICS_TAG, hrve.getTag());
-            addPair(splunkLogEvent, SplunkAppDynamicsEvent.COMMON_NAME, hrve.getHealthRuleName());
-            addPair(splunkLogEvent, SplunkAppDynamicsEvent.APPDYNAMICS_RULE_ID, hrve.getHealthRuleID());
-            addPair(splunkLogEvent, SplunkAppDynamicsEvent.COMMON_DURATION, hrve.getPvnTimePeriodInMinutes());
-            addPair(splunkLogEvent, SplunkAppDynamicsEvent.APPDYNAMICS_AFFECTED_ENTITY_TYPE, hrve.getAffectedEntityType());
-            addPair(splunkLogEvent, SplunkAppDynamicsEvent.APPDYNAMICS_AFFECTED_ENTITY_NAME, hrve.getAffectedEntityName());
-            addPair(splunkLogEvent, SplunkAppDynamicsEvent.APPDYNAMICS_AFFECTED_ENTITY_ID, hrve.getAffectedEntityID());
+            logMessage.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_APPLICATION_NAME, hrve.getAppName());
+            logMessage.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_APPLICATION_ID, hrve.getAppID());
+            logMessage.addPair(SplunkAppDynamicsEvent.COMMON_DVC_TIME, hrve.getPvnAlertTime());
+            logMessage.addPair(SplunkAppDynamicsEvent.COMMON_PRIORITY, hrve.getPriority());
+            logMessage.addPair(SplunkAppDynamicsEvent.COMMON_SEVERITY, hrve.getSeverity());
+            logMessage.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_TAG, hrve.getTag());
+            logMessage.addPair(SplunkAppDynamicsEvent.COMMON_NAME, hrve.getHealthRuleName());
+            logMessage.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_RULE_ID, hrve.getHealthRuleID());
+            logMessage.addPair(SplunkAppDynamicsEvent.COMMON_DURATION, hrve.getPvnTimePeriodInMinutes());
+            logMessage.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_AFFECTED_ENTITY_TYPE, hrve.getAffectedEntityType());
+            logMessage.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_AFFECTED_ENTITY_NAME, hrve.getAffectedEntityName());
+            logMessage.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_AFFECTED_ENTITY_ID, hrve.getAffectedEntityID());
 
-            addPair(splunkLogEvent, SplunkAppDynamicsEvent.COMMON_DESC, hrve.getSummaryMessage());
-            addPair(splunkLogEvent, SplunkAppDynamicsEvent.COMMON_EVENT_ID, hrve.getIncidentID());
-            addPair(splunkLogEvent, SplunkAppDynamicsEvent.COMMON_URL, hrve.getDeepLinkUrl() + hrve.getIncidentID());
-            addPair(splunkLogEvent, SplunkAppDynamicsEvent.APPDYNAMICS_POLICY_EVENT_TYPE, hrve.getEventType());
+            logMessage.addPair(SplunkAppDynamicsEvent.COMMON_DESC, hrve.getSummaryMessage());
+            logMessage.addPair(SplunkAppDynamicsEvent.COMMON_EVENT_ID, hrve.getIncidentID());
+            logMessage.addPair(SplunkAppDynamicsEvent.COMMON_URL, hrve.getDeepLinkUrl() + hrve.getIncidentID());
+            logMessage.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_POLICY_EVENT_TYPE, hrve.getEventType());
             //Peoperties not yet added in the commons lib
-            /*splunkLogEvent.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_ACCOUNT_NAME, hrve.getAccountName());
-            splunkLogEvent.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_ACCOUNT_ID, hrve.getAccountId());*/
+            /*logMessage.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_ACCOUNT_NAME, hrve.getAccountName());
+            logMessage.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_ACCOUNT_ID, hrve.getAccountId());*/
 
 
             List<EvaluationEntity> evaluationEntities = hrve.getEvaluationEntity();
             if (evaluationEntities != null) {
                 int evaluationEntityIndex = 0;
-                SplunkLogEvent clonedLogEvent = null;
+                LogMessage clonedLogMessage = null;
                 if (evaluationEntities.size() > 1) {
-                    clonedLogEvent = splunkLogEvent.clone();
+                    clonedLogMessage = logMessage.clone();
                 }
                 for (EvaluationEntity evaluationEntity : evaluationEntities) {
 
                     List<TriggerCondition> triggeredConditions = evaluationEntity.getTriggeredConditions();
                     if (evaluationEntityIndex >= 1) {
-                        SplunkLogEvent splunkLogEventTmp = null;
+                        LogMessage logMessageTmp = null;
                         if (evaluationEntities.size() == 2) {
-                            splunkLogEventTmp = clonedLogEvent;
+                            logMessageTmp = clonedLogMessage;
                         } else {
-                            splunkLogEventTmp = clonedLogEvent.clone();
+                            logMessageTmp = clonedLogMessage.clone();
                         }
-                        splunkLogEvents.add(splunkLogEventTmp);
+                        logMessages.add(logMessageTmp);
 
-                        addPair(splunkLogEventTmp, SplunkAppDynamicsEvent.APPDYNAMICS_EVALUATION_ENTITY_TYPE, evaluationEntity.getType());
-                        addPair(splunkLogEventTmp, SplunkAppDynamicsEvent.APPDYNAMICS_EVALUATION_ENTITY_NAME, evaluationEntity.getName());
-                        addPair(splunkLogEventTmp, SplunkAppDynamicsEvent.APPDYNAMICS_EVALUATION_ENTITY_ID, evaluationEntity.getId());
+                        logMessageTmp.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_EVALUATION_ENTITY_TYPE, evaluationEntity.getType());
+                        logMessageTmp.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_EVALUATION_ENTITY_NAME, evaluationEntity.getName());
+                        logMessageTmp.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_EVALUATION_ENTITY_ID, evaluationEntity.getId());
 
-                        addTriggeredConditions(splunkLogEventTmp, triggeredConditions, splunkLogEvents);
+                        addTriggeredConditions(logMessageTmp, triggeredConditions, logMessages);
                     } else {
-                        addPair(splunkLogEvent, SplunkAppDynamicsEvent.APPDYNAMICS_EVALUATION_ENTITY_TYPE, evaluationEntity.getType());
-                        addPair(splunkLogEvent, SplunkAppDynamicsEvent.APPDYNAMICS_EVALUATION_ENTITY_NAME, evaluationEntity.getName());
-                        addPair(splunkLogEvent, SplunkAppDynamicsEvent.APPDYNAMICS_EVALUATION_ENTITY_ID, evaluationEntity.getId());
+                        logMessage.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_EVALUATION_ENTITY_TYPE, evaluationEntity.getType());
+                        logMessage.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_EVALUATION_ENTITY_NAME, evaluationEntity.getName());
+                        logMessage.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_EVALUATION_ENTITY_ID, evaluationEntity.getId());
 
-                        addTriggeredConditions(splunkLogEvent, triggeredConditions, splunkLogEvents);
+                        addTriggeredConditions(logMessage, triggeredConditions, logMessages);
                     }
                     evaluationEntityIndex++;
                 }
             }
         } else {
             OtherEvent oe = (OtherEvent) event;
-            SplunkLogEvent splunkLogEvent = new SplunkLogEvent(oe.getEventNotificationName(), oe.getEventNotificationId());
+            LogMessage logMessage = new LogMessage();
+            logMessage.addPair("name", oe.getEventNotificationName()).addPair("event_id", oe.getEventNotificationId());
 
-            splunkLogEvents.add(splunkLogEvent);
 
-            addPair(splunkLogEvent, SplunkAppDynamicsEvent.APPDYNAMICS_APPLICATION_NAME, oe.getAppName());
-            addPair(splunkLogEvent, SplunkAppDynamicsEvent.APPDYNAMICS_APPLICATION_ID, oe.getAppID());
-            addPair(splunkLogEvent, SplunkAppDynamicsEvent.COMMON_DVC_TIME, oe.getEventNotificationTime());
-            addPair(splunkLogEvent, SplunkAppDynamicsEvent.COMMON_PRIORITY, oe.getPriority());
-            addPair(splunkLogEvent, SplunkAppDynamicsEvent.COMMON_SEVERITY, oe.getSeverity());
-            addPair(splunkLogEvent, SplunkAppDynamicsEvent.APPDYNAMICS_TAG, oe.getTag());
-            addPair(splunkLogEvent, SplunkAppDynamicsEvent.COMMON_NAME, oe.getEventNotificationName());
-            addPair(splunkLogEvent, SplunkAppDynamicsEvent.COMMON_EVENT_ID, oe.getEventNotificationId());
-            addPair(splunkLogEvent, SplunkAppDynamicsEvent.COMMON_DURATION, oe.getEventNotificationIntervalInMin());
-            addPair(splunkLogEvent, SplunkAppDynamicsEvent.COMMON_URL, oe.getDeepLinkUrl() + oe.getEventNotificationId());
+            logMessages.add(logMessage);
+
+            logMessage.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_APPLICATION_NAME, oe.getAppName());
+            logMessage.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_APPLICATION_ID, oe.getAppID());
+            logMessage.addPair(SplunkAppDynamicsEvent.COMMON_DVC_TIME, oe.getEventNotificationTime());
+            logMessage.addPair(SplunkAppDynamicsEvent.COMMON_PRIORITY, oe.getPriority());
+            logMessage.addPair(SplunkAppDynamicsEvent.COMMON_SEVERITY, oe.getSeverity());
+            logMessage.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_TAG, oe.getTag());
+            logMessage.addPair(SplunkAppDynamicsEvent.COMMON_NAME, oe.getEventNotificationName());
+            logMessage.addPair(SplunkAppDynamicsEvent.COMMON_EVENT_ID, oe.getEventNotificationId());
+            logMessage.addPair(SplunkAppDynamicsEvent.COMMON_DURATION, oe.getEventNotificationIntervalInMin());
+            logMessage.addPair(SplunkAppDynamicsEvent.COMMON_URL, oe.getDeepLinkUrl() + oe.getEventNotificationId());
             //Peoperties not yet added in the commons lib
-            /*splunkLogEvent.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_ACCOUNT_NAME, oe.getAccountName());
-            splunkLogEvent.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_ACCOUNT_ID, oe.getAccountId());*/
+            /*logMessage.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_ACCOUNT_NAME, oe.getAccountName());
+            logMessage.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_ACCOUNT_ID, oe.getAccountId());*/
 
-            addEventTypesAndEventTypeNum(splunkLogEvent, oe.getEventTypes());
+            addEventTypesAndEventTypeNum(logMessage, oe.getEventTypes());
 
             List<EventSummary> eventSummaries = oe.getEventSummaries();
 
             if (eventSummaries != null) {
 
                 int eventSummariesIndex = 0;
-                SplunkLogEvent clonedLogEvent = null;
+                LogMessage clonedLogMessage = null;
                 if (eventSummaries.size() > 1) {
-                    clonedLogEvent = splunkLogEvent.clone();
+                    clonedLogMessage = logMessage.clone();
                 }
                 for (EventSummary eventSummary : eventSummaries) {
 
                     if (eventSummariesIndex >= 1) {
-                        SplunkLogEvent splunkLogEventTmp = null;
+                        LogMessage logMessageTmp = null;
                         if (eventSummaries.size() == 2) {
-                            splunkLogEventTmp = clonedLogEvent;
+                            logMessageTmp = clonedLogMessage;
                         } else {
-                            splunkLogEventTmp = clonedLogEvent.clone();
+                            logMessageTmp = clonedLogMessage.clone();
                         }
-                        splunkLogEvents.add(splunkLogEventTmp);
+                        logMessages.add(logMessageTmp);
                     } else {
-                        addPair(splunkLogEvent, SplunkAppDynamicsEvent.APPDYNAMICS_EVENT_SUMMARY_ID, eventSummary.getEventSummaryId());
-                        addPair(splunkLogEvent, SplunkAppDynamicsEvent.APPDYNAMICS_EVENT_SUMMARY_TIME, eventSummary.getEventSummaryTime());
-                        addPair(splunkLogEvent, SplunkAppDynamicsEvent.APPDYNAMICS_EVENT_SUMMARY_TYPE, eventSummary.getEventSummaryType());
-                        addPair(splunkLogEvent, SplunkAppDynamicsEvent.APPDYNAMICS_EVENT_SUMMARY_SEVERITY, eventSummary.getEventSummarySeverity());
-                        addPair(splunkLogEvent, SplunkAppDynamicsEvent.COMMON_DESC, eventSummary.getEventSummaryString());
+                        logMessage.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_EVENT_SUMMARY_ID, eventSummary.getEventSummaryId());
+                        logMessage.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_EVENT_SUMMARY_TIME, eventSummary.getEventSummaryTime());
+                        logMessage.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_EVENT_SUMMARY_TYPE, eventSummary.getEventSummaryType());
+                        logMessage.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_EVENT_SUMMARY_SEVERITY, eventSummary.getEventSummarySeverity());
+                        logMessage.addPair(SplunkAppDynamicsEvent.COMMON_DESC, eventSummary.getEventSummaryString());
                     }
                     eventSummariesIndex++;
                 }
@@ -352,10 +214,10 @@ public class SendADNotificationToSplunk  {
             }
         }
 
-        return splunkLogEvents;
+        return logMessages;
     }
 
-    private static void addEventTypesAndEventTypeNum(SplunkLogEvent splunkLogEvent, List<EventType> eventTypes) {
+    private static void addEventTypesAndEventTypeNum(LogMessage logMessage, List<EventType> eventTypes) {
         if (eventTypes != null) {
             StringBuilder eventTypesString = new StringBuilder("{");
             StringBuilder eventTypesNumString = new StringBuilder("{");
@@ -371,63 +233,53 @@ public class SendADNotificationToSplunk  {
             }
             eventTypesString.append("}");
             eventTypesNumString.append("}");
-            addPair(splunkLogEvent, SplunkAppDynamicsEvent.APPDYNAMICS_EVENT_TYPES, eventTypesString.toString());
-            addPair(splunkLogEvent, SplunkAppDynamicsEvent.APPDYNAMICS_NUMBER_OF_EVENTS_FOR_TYPES, eventTypesNumString.toString());
+            logMessage.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_EVENT_TYPES, eventTypesString.toString());
+            logMessage.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_NUMBER_OF_EVENTS_FOR_TYPES, eventTypesNumString.toString());
         }
     }
 
-    private static void addTriggeredConditions(SplunkLogEvent splunkLogEvent, List<TriggerCondition> triggeredConditions, List<SplunkLogEvent> splunkLogEvents) {
+    private static void addTriggeredConditions(LogMessage logMessage, List<TriggerCondition> triggeredConditions, List<LogMessage> logMessages) {
         int triggeredConditionsIndex = 0;
         if (triggeredConditions != null) {
-            SplunkLogEvent clonedLogEvent = null;
+            LogMessage clonedLogMessage = null;
             if (triggeredConditions.size() > 1) {
-                clonedLogEvent = splunkLogEvent.clone();
+                clonedLogMessage = logMessage.clone();
             }
             for (TriggerCondition triggerCondition : triggeredConditions) {
 
                 if (triggeredConditionsIndex >= 1) {
 
-                    SplunkLogEvent splunkLogEventTmp = null;
+                    LogMessage logMessageTmp = null;
                     if (triggeredConditions.size() == 2) {
-                        splunkLogEventTmp = clonedLogEvent;
+                        logMessageTmp = clonedLogMessage;
                     } else {
-                        splunkLogEventTmp = clonedLogEvent.clone();
+                        logMessageTmp = clonedLogMessage.clone();
                     }
 
-                    splunkLogEvents.add(splunkLogEventTmp);
+                    logMessages.add(logMessageTmp);
 
-                    addTriggeredConditionsToLogEvent(splunkLogEventTmp, triggerCondition);
+                    addTriggeredConditionsToLogEvent(logMessageTmp, triggerCondition);
 
                 } else {
-                    addTriggeredConditionsToLogEvent(splunkLogEvent, triggerCondition);
+                    addTriggeredConditionsToLogEvent(logMessage, triggerCondition);
                 }
                 triggeredConditionsIndex++;
             }
         }
     }
 
-    private static void addTriggeredConditionsToLogEvent(SplunkLogEvent splunkLogEvent, TriggerCondition triggerCondition) {
-        addPair(splunkLogEvent, SplunkAppDynamicsEvent.APPDYNAMICS_SCOPE_TYPE, triggerCondition.getScopeType());
-        addPair(splunkLogEvent, SplunkAppDynamicsEvent.APPDYNAMICS_SCOPE_NAME, triggerCondition.getScopeName());
-        addPair(splunkLogEvent, SplunkAppDynamicsEvent.APPDYNAMICS_SCOPE_ID, triggerCondition.getScopeId());
-        addPair(splunkLogEvent, SplunkAppDynamicsEvent.APPDYNAMICS_CONDITION_NAME, triggerCondition.getConditionName());
-        addPair(splunkLogEvent, SplunkAppDynamicsEvent.APPDYNAMICS_CONDITION_ID, triggerCondition.getConditionId());
-        addPair(splunkLogEvent, SplunkAppDynamicsEvent.APPDYNAMICS_OPERATOR, triggerCondition.getOperator());
-        addPair(splunkLogEvent, SplunkAppDynamicsEvent.APPDYNAMICS_CONDITION_UNIT_TYPE, triggerCondition.getConditionUnitType());
-        addPair(splunkLogEvent, SplunkAppDynamicsEvent.APPDYNAMICS_USE_DEFAULT_BASELINE, triggerCondition.isUseDefaultBaseline());
-        addPair(splunkLogEvent, SplunkAppDynamicsEvent.APPDYNAMICS_BASELINE_NAME, triggerCondition.getBaselineName());
-        addPair(splunkLogEvent, SplunkAppDynamicsEvent.APPDYNAMICS_BASELINE_ID, triggerCondition.getBaselineId());
-        addPair(splunkLogEvent, SplunkAppDynamicsEvent.APPDYNAMICS_THRESHOLD_VALUE, triggerCondition.getThresholdValue());
-        addPair(splunkLogEvent, SplunkAppDynamicsEvent.APPDYNAMICS_OBSERVED_VALUE, triggerCondition.getObservedValue());
-    }
-
-    private static void addPair(SplunkLogEvent splunkLogEvent, String key, String value) {
-        if (value != null) {
-            splunkLogEvent.addPair(key, value);
-        }
-    }
-
-    private static void addPair(SplunkLogEvent splunkLogEvent, String key, boolean value) {
-        splunkLogEvent.addPair(key, value);
+    private static void addTriggeredConditionsToLogEvent(LogMessage logMessage, TriggerCondition triggerCondition) {
+        logMessage.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_SCOPE_TYPE, triggerCondition.getScopeType());
+        logMessage.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_SCOPE_NAME, triggerCondition.getScopeName());
+        logMessage.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_SCOPE_ID, triggerCondition.getScopeId());
+        logMessage.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_CONDITION_NAME, triggerCondition.getConditionName());
+        logMessage.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_CONDITION_ID, triggerCondition.getConditionId());
+        logMessage.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_OPERATOR, triggerCondition.getOperator());
+        logMessage.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_CONDITION_UNIT_TYPE, triggerCondition.getConditionUnitType());
+        logMessage.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_USE_DEFAULT_BASELINE, triggerCondition.isUseDefaultBaseline());
+        logMessage.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_BASELINE_NAME, triggerCondition.getBaselineName());
+        logMessage.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_BASELINE_ID, triggerCondition.getBaselineId());
+        logMessage.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_THRESHOLD_VALUE, triggerCondition.getThresholdValue());
+        logMessage.addPair(SplunkAppDynamicsEvent.APPDYNAMICS_OBSERVED_VALUE, triggerCondition.getObservedValue());
     }
 }

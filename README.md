@@ -10,12 +10,6 @@ Splunk [www.splunk.com](http://www.splunk.com) indexes and makes searchable data
 
  1. User needs to have edit_tcp permission to post events to Splunk
 
- 2. Splunk sdk and logging libraries are not in maven repo. To get it using maven we have to install the library in the local maven repo. Splunk sdk 1.4.0 and Splunk logging 1.2 are checked in to the lib folder. Use the below maven commands to install the libraries to local maven repo.
-
-mvn install:install-file -Dfile=lib/splunklogging.jar -DgroupId=splunkjavalogging -DartifactId=splunkjavalogging -Dversion=1.2 -Dpackaging=jar
-
-mvn install:install-file -Dfile=lib/splunk-sdk-java-1.4.0.jar -DgroupId=com.splunk -DartifactId=splunk -Dversion=1.4.0 -Dpackaging=jar
-
 
 ##Installation Steps
 
@@ -52,38 +46,44 @@ mvn install:install-file -Dfile=lib/splunk-sdk-java-1.4.0.jar -DgroupId=com.splu
       ```
       Uncomment the appropriate executable tag based on windows or linux/unix machine.
 
-##Setting up .splunkrc file
+##Setting up config.yml file
 
-A sample .splunkrc file is included in splunk-alert/conf
+A sample config.yml file is included in splunk-alert/conf
 
-1.  Edit the .splunkrc file to add information that allows the Controller to communicate with Splunk.
+1.  Edit the config.yml file to add information that allows the Controller to communicate with Splunk.
 
 ```
-        # Host at which Splunk is reachable (OPTIONAL)
-        host=localhost
-        # Port at which Splunk is reachable (OPTIONAL)
+        # Host at which Splunk is reachable
+        host: localhost
+        # Port at which Splunk is reachable
         # Use the admin port, which is 8089 by default.
-        port=8089
+        port: 8089
         # Splunk username
-        username=admin
-        # Splunk password
-        password=changeme
-        # Access scheme (OPTIONAL)
-        scheme=https
-        # Namespace to use (OPTIONAL)
-        namespace=*:*
+        username: admin
+        # Splunk password, provide password or passwordEncrypted and encryptionKey.
+        password: admin
+
+        passwordEncrypted:
+        encryptionKey:
+
+        #Proxy server host
+        proxyHost:
+        #Proxy server port
+        proxyPort:
+        #Proxy server user name
+        proxyUser:
+        #Proxy server password
+        proxyPassword:
 
         #Host Name
-        eventHost=localhost
-        #Index Name
-        index=appdynamics_events
+        eventHost: localhost
+        #Index Name, should be available in Splunk
+        index: appdynamics_events
         #Source Type
-        sourceType=events
+        sourceType: events
 ```
 
-Note: An index with index name should be present in Splunk.
-
-2.  Copy the .splunkrc file to the platform home directory of the user that started the Controller. In Linux, this is the environment variable $HOME location; in Windows, it is the environment variable %USERPROFILE% location.
+Note: An index with the index name should be present in Splunk.
 
 ## Installing Custom Actions:
 To create a Custom Action, first refer to the the following topics (requires login):

@@ -1,12 +1,12 @@
 /**
  * Copyright 2013 AppDynamics
- * 
+ * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,13 +22,10 @@ package com.appdynamics.extensions.splunk;
  * Created on: August 14, 2012.
  */
 
-import com.splunk.logging.SplunkLogEvent;
-
-public class SplunkAppDynamicsEvent extends SplunkLogEvent
-{
+public class SplunkAppDynamicsEvent {
     // ----------------------------------
-	// AppDynamics fields
-	// ----------------------------------
+    // AppDynamics fields
+    // ----------------------------------
     public static final String APPDYNAMICS_APPLICATION_NAME = "ad_application_name";
     public static final String APPDYNAMICS_APPLICATION_ID = "ad_application_id";
     public static final String APPDYNAMICS_TAG = "ad_tag";
@@ -63,4 +60,16 @@ public class SplunkAppDynamicsEvent extends SplunkLogEvent
 
     public static final String APPDYNAMICS_ACCOUNT_NAME = "ad_account_name";
     public static final String APPDYNAMICS_ACCOUNT_ID = "ad_account_id";
+
+    //Taken from com.splunk.logging.SplunkLogEvent
+
+    public static String COMMON_DVC_TIME = "dvc_time";
+    public static String COMMON_PRIORITY = "priority";
+    public static String COMMON_SEVERITY = "severity";
+    public static String COMMON_NAME = "name";
+    public static String COMMON_DURATION = "duration";
+    public static String COMMON_DESC = "desc";
+    public static String COMMON_EVENT_ID = "event_id";
+    public static String COMMON_URL = "url";
+
 }

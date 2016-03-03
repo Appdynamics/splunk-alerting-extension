@@ -1,0 +1,28 @@
+# Host at which Splunk is reachable
+host: localhost
+# Port at which Splunk is reachable
+# Use the admin port, which is 8089 by default.
+port: 8089
+# Splunk username
+username: admin
+# Splunk password, provide password or passwordEncrypted and encryptionKey.
+password: admin
+
+passwordEncrypted:
+encryptionKey:
+
+#Proxy server host
+proxyHost:
+#Proxy server port
+proxyPort:
+#Proxy server user name
+proxyUser:
+#Proxy server password
+proxyPassword:
+
+#Host Name
+eventHost: localhost
+#Index Name, should be available in Splunk
+index: appdynamics_events
+#Source Type
+sourceType: events

@@ -21,17 +21,12 @@
         <appender-ref ref="RollingFileAppender"/>
         <appender-ref ref="ConsoleAppender"/>
     </logger>
+    <logger name="com.appdynamics.extensions.splunk" additivity="false">
+        <level value="info"/>
+        <appender-ref ref="RollingFileAppender"/>
+        <appender-ref ref="ConsoleAppender"/>
+    </logger>
     <logger name="org.apache" additivity="false">
-        <level value="info"/>
-        <appender-ref ref="RollingFileAppender"/>
-        <appender-ref ref="ConsoleAppender"/>
-    </logger>
-    <logger name="com.splunk" additivity="false">
-        <level value="info"/>
-        <appender-ref ref="RollingFileAppender"/>
-        <appender-ref ref="ConsoleAppender"/>
-    </logger>
-    <logger name="com.dtdsoftware" additivity="false">
         <level value="info"/>
         <appender-ref ref="RollingFileAppender"/>
         <appender-ref ref="ConsoleAppender"/>
