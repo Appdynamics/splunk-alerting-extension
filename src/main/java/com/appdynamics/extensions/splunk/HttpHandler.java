@@ -77,8 +77,10 @@ public class HttpHandler {
         map.put("servers", list);
         HashMap<String, String> server = new HashMap<String, String>();
         server.put("uri", "https://" + config.getHost());
-        server.put("username", config.getUsername());
-        server.put("password", getPassword());
+        if(config.getUsername() != null && config.getUsername().length() > 0) {
+            server.put("username", config.getUsername());
+            server.put("password", getPassword());
+        }
         list.add(server);
 
 
@@ -113,16 +115,23 @@ public class HttpHandler {
         HttpClientBuilder builder = Http4ClientBuilder.getBuilder(map);
         builder.setConnectionManager(connMgr);
 
-        CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-        credentialsProvider.setCredentials(AuthScope.ANY,
-                new UsernamePasswordCredentials(config.getUsername(), getPassword()));
-
-        httpClient = builder.setSSLSocketFactory(sslSocketFactory).setDefaultCredentialsProvider(credentialsProvider).build();
 
         httpContext = HttpClientContext.create();
-        httpContext.setCredentialsProvider(credentialsProvider);
 
+        HttpClientBuilder httpClientBuilder = builder.setSSLSocketFactory(sslSocketFactory);
 
+        if(config.getUsername() != null && config.getUsername().length() > 0) {
+
+            CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+            credentialsProvider.setCredentials(AuthScope.ANY,
+                    new UsernamePasswordCredentials(config.getUsername(), getPassword()));
+
+            httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+
+            httpContext.setCredentialsProvider(credentialsProvider);
+        }
+
+        httpClient = httpClientBuilder.build();
     }
 
     private String getPassword() {
