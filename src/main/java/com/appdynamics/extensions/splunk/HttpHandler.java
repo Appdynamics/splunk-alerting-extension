@@ -72,17 +72,7 @@ public class HttpHandler {
 
     private void setupHttpClient() {
 
-        Map<String, List<Map<String, String>>> map = new HashMap<String, List<Map<String, String>>>();
-        List<Map<String, String>> list = new ArrayList<Map<String, String>>();
-        map.put("servers", list);
-        HashMap<String, String> server = new HashMap<String, String>();
-        server.put("uri", "https://" + config.getHost());
-        if(config.getUsername() != null && config.getUsername().length() > 0) {
-            server.put("username", config.getUsername());
-            server.put("password", getPassword());
-        }
-        list.add(server);
-
+        Map map = createHttpConfigMap();
 
         //Workaround to ignore the certificate mismatch issue.
         SSLContext sslContext = null;
@@ -132,6 +122,28 @@ public class HttpHandler {
         }
 
         httpClient = httpClientBuilder.build();
+    }
+
+    private Map<String, String> createHttpConfigMap() {
+
+        Map map = new HashMap();
+        List<Map<String, String>> list = new ArrayList<Map<String, String>>();
+        map.put("servers", list);
+        HashMap<String, String> server = new HashMap<String, String>();
+        server.put("uri", "https://" + config.getHost());
+        if(config.getUsername() != null && config.getUsername().length() > 0) {
+            server.put("username", config.getUsername());
+            server.put("password", getPassword());
+        }
+        list.add(server);
+
+        HashMap<String, String> proxyProps = new HashMap<String, String>();
+        map.put("proxy", proxyProps);
+        proxyProps.put("uri", config.getProxyUri());
+        proxyProps.put("username", config.getProxyUser());
+        proxyProps.put("password", config.getProxyPassword());
+
+        return map;
     }
 
     private String getPassword() {

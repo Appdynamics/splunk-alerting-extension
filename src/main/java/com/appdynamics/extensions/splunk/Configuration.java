@@ -12,12 +12,10 @@ public class Configuration {
     private String passwordEncrypted;
     private String encryptionKey;
 
-    private String proxyHost;
-    private String proxyPort;
+    private String proxyUri;
     private String proxyUser;
     private String proxyPassword;
 
-    private String eventHost;
     private String index;
     private String sourceType;
 
@@ -70,20 +68,12 @@ public class Configuration {
         this.encryptionKey = encryptionKey;
     }
 
-    public String getProxyHost() {
-        return proxyHost;
+    public String getProxyUri() {
+        return proxyUri;
     }
 
-    public void setProxyHost(String proxyHost) {
-        this.proxyHost = proxyHost;
-    }
-
-    public String getProxyPort() {
-        return proxyPort;
-    }
-
-    public void setProxyPort(String proxyPort) {
-        this.proxyPort = proxyPort;
+    public void setProxyUri(String proxyUri) {
+        this.proxyUri = proxyUri;
     }
 
     public String getProxyUser() {
@@ -100,14 +90,6 @@ public class Configuration {
 
     public void setProxyPassword(String proxyPassword) {
         this.proxyPassword = proxyPassword;
-    }
-
-    public String getEventHost() {
-        return eventHost;
-    }
-
-    public void setEventHost(String eventHost) {
-        this.eventHost = eventHost;
     }
 
     public String getIndex() {
