@@ -66,17 +66,13 @@ A sample config.yml file is included in splunk-alert/conf
         passwordEncrypted:
         encryptionKey:
 
-        #Proxy server host
-        proxyHost:
-        #Proxy server port
-        proxyPort:
+        #Proxy server URI
+        proxyUri:
         #Proxy server user name
         proxyUser:
         #Proxy server password
         proxyPassword:
 
-        #Host Name
-        eventHost: localhost
         #Index Name, should be available in Splunk
         index: appdynamics_events
         #Source Type
