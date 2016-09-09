@@ -17,4 +17,4 @@
 # --------------------------------------------------
 # Shell script to send event notifications to Splunk
 # --------------------------------------------------
-../../../jre/bin/java -Dlog4j.configuration=file:conf/log4j.xml -jar splunk-alerting-extension.jar "$@"
+java -Dlog4j.configuration=file:conf/log4j.xml -jar splunk-alerting-extension.jar "$@"
