@@ -81,6 +81,16 @@ A sample config.yml file is included in splunk-alert/conf
 
 Note: An index with the index name should be present in Splunk.
 
+## Password Encryption Support
+
+To avoid setting the clear text password in the config.yml, please follow the process below to encrypt the password
+
+1. Download the util jar to encrypt the password from [https://github.com/Appdynamics/maven-repo/blob/master/releases/com/appdynamics/appd-exts-commons/1.1.2/appd-exts-commons-1.1.2.jar](https://github.com/Appdynamics/maven-repo/blob/master/releases/com/appdynamics/appd-exts-commons/1.1.2/appd-exts-commons-1.1.2.jar) and navigate to the downloaded directory
+2. Encrypt password from the commandline
+`java -cp appd-exts-commons-1.1.2.jar com.appdynamics.extensions.crypto.Encryptor encryptionKey myPassword`
+3. Specify the passwordEncrypted and encryptionKey in config.yml
+
+
 ## Installing Custom Actions:
 To create a Custom Action, first refer to the the following topics (requires login):
 * [Creating custom action](http://docs.appdynamics.com/display/PRO13S/Custom+Actions)
